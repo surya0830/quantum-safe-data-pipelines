@@ -46,3 +46,17 @@ htmlcov/
 # Results (optional - uncomment if you don't want to commit results)
 # results/*.csv
 # results/*.json
+
+# Private development and assessment files
+RESEARCH_ROADMAP.md
+PUBLICATION_ASSESSMENT.md
+QUICK_WINS.md
+test_signature_api.py
+*_PRIVATE.md
+*_TODO.md
+*_NOTES.md
+
+# Immigration/visa related documents
+EB1A_*.md
+VISA_*.md
+IMMIGRATION_*.md
