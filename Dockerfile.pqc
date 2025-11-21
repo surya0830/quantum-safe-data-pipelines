@@ -1,0 +1,58 @@
+# Dockerfile.pqc - Reproducible environment with liboqs + Python for real PQC benchmarks
+
+# 1. Base image with Python 3.10 (slim to keep image reasonably small)
+FROM python:3.10-slim AS base
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# 2. Install build tools and dependencies for liboqs, Python packages, and Java for Spark
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        git \
+        cmake \
+        ninja-build \
+        build-essential \
+        libssl-dev \
+        ca-certificates \
+        pkg-config \
+        openjdk-21-jre-headless && \
+    rm -rf /var/lib/apt/lists/*
+
+# Set JAVA_HOME for Spark/PySpark
+ENV JAVA_HOME=/usr/lib/jvm/java-21-openjdk-arm64
+ENV PATH="${JAVA_HOME}/bin:${PATH}"
+
+# 3. Build and install liboqs from source
+WORKDIR /opt
+RUN git clone https://github.com/open-quantum-safe/liboqs.git && \
+    cd liboqs && \
+    mkdir build && cd build && \
+    cmake -GNinja -DCMAKE_INSTALL_PREFIX=/usr/local .. && \
+    ninja && \
+    ninja install
+
+# 4. Build and install Python bindings for liboqs (pyoqs/oqs)
+WORKDIR /opt
+RUN git clone https://github.com/open-quantum-safe/liboqs-python.git && \
+    cd liboqs-python && \
+    python -m pip install --no-cache-dir .
+
+# 5. Create application directory and copy project files
+WORKDIR /app
+
+# Install Python dependencies first (for better Docker layer caching)
+COPY requirements.txt ./
+RUN python -m pip install --no-cache-dir -r requirements.txt
+
+# Now copy the rest of the project
+COPY . .
+
+# 6. Set a predictable locale and Python options for reproducibility
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    LD_LIBRARY_PATH=/usr/local/lib \
+    PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
+
+# 7. Default command: regenerate benchmarks (stub + real) and print summary
+# Users can override this at `docker run` time if needed.
+CMD ["/bin/sh", "-c", "python -m scripts.regenerate_crypto_results && python -m src.benchmarks.run_all"]

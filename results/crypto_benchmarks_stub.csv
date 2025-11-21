@@ -1,0 +1,6 @@
+Algorithm,Avg Latency (ms)
+rsa_oaep_2048_encrypt_decrypt,1.460
+aes_gcm_256_encrypt_decrypt,0.910
+kyber_kem_keygen_encap_decap_stub,0.021
+dilithium_sign_verify_stub,0.025
+sphincs_sign_verify_stub,0.044

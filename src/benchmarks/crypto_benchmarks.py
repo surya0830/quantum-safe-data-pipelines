@@ -33,16 +33,21 @@ from ..crypto.classical import (
     aes_gcm_decrypt,
 )
 from ..crypto.pqc_stubs import (
-    kyber_generate_keypair,
-    kyber_encapsulate,
-    kyber_decapsulate,
-    dilithium_generate_keypair,
-    dilithium_sign,
-    dilithium_verify,
-    sphincs_generate_keypair,
-    sphincs_sign,
-    sphincs_verify,
+    kyber_generate_keypair as kyber_generate_keypair_stub,
+    kyber_encapsulate as kyber_encapsulate_stub,
+    kyber_decapsulate as kyber_decapsulate_stub,
+    dilithium_generate_keypair as dilithium_generate_keypair_stub,
+    dilithium_sign as dilithium_sign_stub,
+    dilithium_verify as dilithium_verify_stub,
+    sphincs_generate_keypair as sphincs_generate_keypair_stub,
+    sphincs_sign as sphincs_sign_stub,
+    sphincs_verify as sphincs_verify_stub,
 )
+
+try:
+    from ..crypto import pqc_real
+except Exception:  # pragma: no cover - optional dependency
+    pqc_real = None
 
 
 @dataclass
@@ -85,6 +90,7 @@ def _time_function(fn: Callable[[], None], repeats: int = 10) -> TimingResult:
 def run_crypto_benchmarks(
     message_sizes: Optional[List[int]] = None,
     repeats: int = 5,
+    use_real_pqc: bool = False,
 ) -> Dict[str, TimingResult]:
     """Run a fixed suite of crypto micro-benchmarks.
 
@@ -96,6 +102,11 @@ def run_crypto_benchmarks(
         a small, fixed-size message that is safe for RSA-2048 with OAEP.
     repeats:
         Number of repetitions per benchmarked function.
+    use_real_pqc:
+        If ``True``, and if ``src.crypto.pqc_real`` is available and
+        successfully imported, run KEM/signature benchmarks against the real
+        backend instead of the educational stubs. If the real backend is not
+        available, a ``RuntimeError`` is raised.
 
     Returns
     -------
@@ -131,27 +142,64 @@ def run_crypto_benchmarks(
 
     results["aes_gcm_256_encrypt_decrypt"] = _time_function(aes_gcm_round, repeats=repeats)
 
+    # Select backend for PQC-style operations.
+    if use_real_pqc:
+        if pqc_real is None or not getattr(pqc_real, "available", False):
+            raise RuntimeError(
+                "use_real_pqc=True but real PQC backend is not available. "
+                "Install 'oqs' (pyoqs/liboqs) and ensure 'src.crypto.pqc_real' "
+                "can import it, or run with use_real_pqc=False."
+            )
+
+        kyber_gen = pqc_real.kyber_generate_keypair
+        kyber_enc = pqc_real.kyber_encapsulate
+        kyber_dec = pqc_real.kyber_decapsulate
+
+        dilithium_gen = pqc_real.dilithium_generate_keypair
+        dilithium_sig = pqc_real.dilithium_sign
+        dilithium_ver = pqc_real.dilithium_verify
+
+        sphincs_gen = pqc_real.sphincs_generate_keypair
+        sphincs_sig = pqc_real.sphincs_sign
+        sphincs_ver = pqc_real.sphincs_verify
+
+        label_suffix = "_real"
+    else:
+        kyber_gen = kyber_generate_keypair_stub
+        kyber_enc = kyber_encapsulate_stub
+        kyber_dec = kyber_decapsulate_stub
+
+        dilithium_gen = dilithium_generate_keypair_stub
+        dilithium_sig = dilithium_sign_stub
+        dilithium_ver = dilithium_verify_stub
+
+        sphincs_gen = sphincs_generate_keypair_stub
+        sphincs_sig = sphincs_sign_stub
+        sphincs_ver = sphincs_verify_stub
+
+        label_suffix = "_stub"
+
     def kyber_kem_round() -> None:
-        kp = kyber_generate_keypair()
-        ss, ct = kyber_encapsulate(kp.public_key)
-        _ = kyber_decapsulate(kp.private_key, ct)
+        kp = kyber_gen()
+        ss, ct = kyber_enc(kp.public_key)
+        _ = kyber_dec(kp.private_key, ct)
         _ = ss
 
-    results["kyber_kem_keygen_encap_decap"] = _time_function(kyber_kem_round, repeats=repeats)
+    results[f"kyber_kem_keygen_encap_decap{label_suffix}"] = _time_function(kyber_kem_round, repeats=repeats)
 
     def dilithium_sig_round() -> None:
-        kp = dilithium_generate_keypair()
-        sig = dilithium_sign(kp.private_key, bulk_message)
-        _ = dilithium_verify(kp.public_key, bulk_message, sig)
+        kp = dilithium_gen()
+        sig = dilithium_sig(kp.private_key, bulk_message)
+        _ = dilithium_ver(kp.public_key, bulk_message, sig)
 
-    results["dilithium_sign_verify"] = _time_function(dilithium_sig_round, repeats=repeats)
+    results[f"dilithium_sign_verify{label_suffix}"] = _time_function(dilithium_sig_round, repeats=repeats)
 
     def sphincs_sig_round() -> None:
-        kp = sphincs_generate_keypair()
-        sig = sphincs_sign(kp.private_key, bulk_message)
-        _ = sphincs_verify(kp.public_key, bulk_message, sig)
+        kp = sphincs_gen()
+        sig = sphincs_sig(kp.private_key, bulk_message)
+        _ = sphincs_ver(kp.public_key, bulk_message, sig)
 
-    results["sphincs_sign_verify"] = _time_function(sphincs_sig_round, repeats=repeats)
+    results[f"sphincs_sign_verify{label_suffix}"] = _time_function(sphincs_sig_round, repeats=repeats)
 
     return results
 
@@ -165,7 +213,7 @@ def format_results_table(results: Dict[str, TimingResult]) -> str:
     return "\n".join(lines)
 
 
-def write_results_csv(path: Union[str, Path], message_sizes: Optional[List[int]] = None, repeats: int = 5) -> None:
+def write_results_csv(path: Union[str, Path], message_sizes: Optional[List[int]] = None, repeats: int = 5, use_real_pqc: bool = False) -> None:
     """Run crypto benchmarks and write results to a CSV file.
 
     The file will contain the same header and rows as ``format_results_table``.
@@ -181,10 +229,15 @@ def write_results_csv(path: Union[str, Path], message_sizes: Optional[List[int]]
         are used.
     repeats:
         Number of repetitions per benchmark.
+    use_real_pqc:
+        If ``True``, and if ``src.crypto.pqc_real`` is available and
+        successfully imported, run KEM/signature benchmarks against the real
+        backend instead of the educational stubs. If the real backend is not
+        available, a ``RuntimeError`` is raised.
     """
     output_path = Path(path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    results = run_crypto_benchmarks(message_sizes=message_sizes, repeats=repeats)
+    results = run_crypto_benchmarks(message_sizes=message_sizes, repeats=repeats, use_real_pqc=use_real_pqc)
     csv_text = format_results_table(results)
     output_path.write_text(csv_text + "\n", encoding="utf-8")
