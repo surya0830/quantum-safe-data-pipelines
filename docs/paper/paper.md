@@ -779,6 +779,28 @@ hope that the code and architecture presented here will serve as a useful
 starting point for researchers and practitioners seeking to engineer
 pipelines that remain secure in the presence of quantum-capable adversaries.
 
+## Code Availability
+
+The complete research codebase, including implementations of classical and
+post-quantum cryptographic primitives, BB84 QKD simulator, threat models,
+benchmarking harness, and integration with PySpark, is available as an
+open-source repository:
+
+**GitHub Repository:** [https://github.com/suryak614/QuantumComputing](https://github.com/suryak614/QuantumComputing)
+
+The repository includes:
+- Reference-style implementations and educational stubs for CRYSTALS-Kyber,
+  CRYSTALS-Dilithium, and SPHINCS+ (not production-grade)
+- Classical cryptography using standard Python libraries (RSA-2048, AES-256-GCM)
+- BB84 quantum key distribution simulator
+- Analytical models for Shor's and Grover's algorithm resource estimates
+- Micro-benchmarking framework for comparing classical and PQC operations
+- Example data pipeline integrations with PySpark
+- Comprehensive documentation and configuration-driven experiment setup
+
+All code is released under an open license to support reproducible research
+and further exploration of quantum-resilient data engineering.
+
 ## References
 
 Chen, L., Jordan, S., Liu, Y.-K., Moody, D., Peralta, R., Perlner, R., &
