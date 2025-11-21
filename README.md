@@ -1,6 +1,7 @@
 # Quantum-Safe Data Pipeline Research Project
 
 [![GitHub](https://img.shields.io/badge/GitHub-QuantumComputing-blue)](https://github.com/suryak614/QuantumComputing)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 This project explores the integration of quantum computing principles, post-quantum cryptography, and modern data engineering (Spark, distributed storage, streaming) to design and evaluate quantum-resistant data pipelines.
 
@@ -32,6 +33,27 @@ This project explores the integration of quantum computing principles, post-quan
    ```
 
 See `docs/paper/paper.md` for the research paper draft and `notebooks/benchmarks.ipynb` for interactive experiments.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+### Educational and Research Use
+
+**Important:** This project includes educational implementations and stubs of post-quantum cryptographic algorithms (Kyber, Dilithium, SPHINCS+) for research and benchmarking purposes. These implementations are **NOT intended for production use** and have not undergone security audits.
+
+For production deployments requiring post-quantum cryptography:
+- Use audited, standards-compliant implementations from trusted sources
+- Refer to the [NIST Post-Quantum Cryptography Standardization](https://csrc.nist.gov/projects/post-quantum-cryptography) project
+- Consider using [liboqs](https://github.com/open-quantum-safe/liboqs) (MIT licensed) which provides production-ready PQC implementations
+
+### Third-Party Dependencies
+
+This project uses several open-source dependencies:
+- **liboqs** (MIT License) - Production-ready post-quantum cryptography library
+- **Apache Spark/PySpark** (Apache License 2.0) - Distributed data processing
+- **NumPy, Pandas, Matplotlib** (BSD licenses) - Data analysis and visualization
+- See `requirements.txt` for complete dependency list with respective licenses
 
 ### Optional: enable real PQC backend (experimental)
 

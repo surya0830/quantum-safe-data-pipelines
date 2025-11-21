@@ -919,8 +919,15 @@ docker build -t quantum-safe-pipelines-pqc -f Dockerfile.pqc .
 docker run --rm quantum-safe-pipelines-pqc
 ```
 
-All code is released under an open license to support reproducible research
-and further exploration of quantum-resilient data engineering.
+All code is released under the MIT License to support reproducible research
+and enable adoption in both academic and commercial settings. Educational
+implementations of post-quantum cryptographic algorithms included in this
+codebase are for research purposes only and are not intended for production
+use. We recommend using audited, standards-compliant implementations such as
+liboqs (https://github.com/open-quantum-safe/liboqs, MIT licensed) for
+production deployments. The complete source code, documentation, and Docker
+configurations are available at
+https://github.com/surya0830/quantum-safe-data-pipelines.
 
 ## References
 
