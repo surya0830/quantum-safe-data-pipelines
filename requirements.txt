@@ -1,0 +1,11 @@
+cryptography
+pylatexenc
+numpy
+pandas
+matplotlib
+seaborn
+notebook
+jupyter
+pyspnego
+pyspark
+scipy
